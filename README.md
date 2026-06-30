@@ -42,9 +42,19 @@ To prevent your console from crashing, you must increase the **UltraHand memory 
 ### 💾 Step 2: Installation
 **Requirements:** You MUST have [nx-ovlloader](https://github.com/WerWolv/nx-ovlloader) and [Ultrahand-Overlay](https://github.com/ppkantorski/Ultrahand-Overlay) installed for this app to work!
 
-There are two easy ways to install:
-* **Option 1 (Zip Extract):** Download the latest release `.zip` file. Extract it and drag all the contents directly to the root of your SD card. The files are already placed in their correct folder paths.
-* **Option 2 (Homebrew App Store):** Open the Homebrew App Store on your console, search for "TranslateNX", and download it directly.
+**Method 1: Homebrew App Store (Automatic Installation)**
+You can download and install the application directly on your Switch via the HB App Store.
+
+<div align="center">
+  <img src="assets/hbappstore.png" alt="HB App Store" width="250">
+  <br>
+  <a href="https://apps.fortheusers.org/switch/TranslateNX">HB Store Download Link</a>
+</div>
+<br>
+
+**Method 2: Manual Installation**
+You can install the application by downloading it on your computer and transferring it to your SD card.
+* Download the latest release `.zip` file. Extract it and drag all the contents directly to the root of your SD card. The files are already placed in their correct folder paths.
 
 ### 🔑 Step 3: Getting API Keys
 TranslateNX needs services to read (OCR) and translate text. For the best performance, we highly recommend using Google Cloud Vision for OCR and DeepL for Translation.
@@ -117,9 +127,19 @@ Cihazın çökmesini (crash) önlemek için **UltraHand bellek ayarını** deği
 ### 💾 2. Aşama: Kurulum
 **Zorunlu Gereksinimler:** Uygulamanın çalışması için cihazınızda [nx-ovlloader](https://github.com/WerWolv/nx-ovlloader) ve [Ultrahand-Overlay](https://github.com/ppkantorski/Ultrahand-Overlay) yüklü olmak ZORUNDADIR!
 
-İki pratik kurulum yöntemi vardır:
-* **Yöntem 1 (Zip Çıkartarak):** İndirdiğiniz en güncel sürüm `.zip` dosyasını bilgisayara çıkartın. Çıkan tüm dosyaları doğrudan SD kartınızın ana dizinine sürükleyip bırakın (Dosyalar kendi yollarına hazır yerleştirilmiştir).
-* **Yöntem 2 (Homebrew App Store):** Cihazınızdan Homebrew App Store'u açıp arama kısmına "TranslateNX" yazarak otomatik olarak kurabilirsiniz.
+**Yöntem 1: Homebrew App Store (Otomatik Kurulum)**
+Uygulamayı doğrudan Switch üzerinden HB App Store aracılığıyla indirip kurabilirsiniz.
+
+<div align="center">
+  <img src="assets/hbappstore.png" alt="HB App Store" width="250">
+  <br>
+  <a href="https://apps.fortheusers.org/switch/TranslateNX">HB Store İndirme Linki</a>
+</div>
+<br>
+
+**Yöntem 2: Manuel Kurulum**
+Uygulamayı bilgisayarınıza indirip SD kartınıza atarak kurabilirsiniz.
+* İndirdiğiniz en güncel sürüm `.zip` dosyasını bilgisayara çıkartın. Çıkan tüm dosyaları doğrudan SD kartınızın ana dizinine sürükleyip bırakın (Dosyalar kendi yollarına hazır yerleştirilmiştir).
 
 ### 🔑 3. Aşama: Gerekli API'lerin Alınması
 TranslateNX'in en iyi performansla çalışması için iki farklı sisteme ihtiyacı vardır. En iyi, en hızlı ve ücretsiz deneyim için OCR olarak **Google Cloud Vision**, çeviri için ise **DeepL** kullanmanızı tavsiye ederiz.
