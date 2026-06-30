@@ -203,6 +203,7 @@ static std::vector<OcrWord> googleVisionExtractWords(const std::string& jsonBody
     cJSON* responses = cJSON_GetObjectItem(root, "responses");
     if (cJSON_IsArray(responses) && cJSON_GetArraySize(responses) > 0) {
         cJSON* resp0 = cJSON_GetArrayItem(responses, 0);
+        
         cJSON* textAnnotations = cJSON_GetObjectItem(resp0, "textAnnotations");
         if (cJSON_IsArray(textAnnotations) && cJSON_GetArraySize(textAnnotations) > 0) {
             // 0. index tüm metindir ve satır/blok ayrımını \n ile yapar.

@@ -663,12 +663,12 @@ public:
         auto* scroll = new ScrollText(22);
 
         scroll->addText(L("Çeviri", "Translation"), tsl::Color(0, 255, 0, 255), 40);
-        scroll->addText(m_trText, tsl::Color(255, 255, 255, 255), 40); 
+        scroll->addText(m_trText, tsl::Color(255, 255, 255, 255), 30); 
         
         scroll->addEmptyLine();
         
         scroll->addText(L("Orijinal Metin", "Original Text"), tsl::Color(255, 0, 0, 255), 40);
-        scroll->addText(m_jpText, tsl::Color(150, 150, 150, 255), 40);
+        scroll->addText(m_jpText, tsl::Color(150, 150, 150, 255), 30);
 
         frame->setContent(scroll);
         return frame;
@@ -781,11 +781,8 @@ public:
                     return str;
                 };
 
-                std::string trStr = truncateUtf8(item.translated, 30);
-                std::string jpStr = truncateUtf8(item.word.text, 30);
-
-                auto linesTR = splitTextGlobal(trStr, 38);
-                auto linesJP = splitTextGlobal(jpStr, 45);
+                auto linesTR = splitTextGlobal(item.translated, 30);
+                auto linesJP = splitTextGlobal(item.word.text, 30);
                 
                 u16 itemHeight = (linesTR.size() * 25) + (linesJP.size() * 20) + 20;
                 
