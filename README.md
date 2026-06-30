@@ -1,26 +1,30 @@
 <div align="center">
-  <img src="assets/logo.png" alt="TranslateNX Logo" width="200">
-  
   # TranslateNX
 
-  TranslateNX is a revolutionary real-time translation overlay for the Nintendo Switch. It seamlessly reads text directly from your games and translates it on-the-fly, breaking language barriers without needing any game-specific patches or mods.
+  <img src="assets/logo.png" alt="TranslateNX Logo" width="200">
+  
+  <p align="center">
+  <b>EN:</b> TranslateNX is a revolutionary real-time translation overlay for the Nintendo Switch. It seamlessly reads text directly from your games and translates it on-the-fly, breaking language barriers without needing any game-specific patches or mods.
 
-  TranslateNX, Nintendo Switch için devrim niteliğinde anlık çeviri aracıdır. Oyunlardaki metinleri doğrudan okuyup anında çevirerek, oyun yamalarına veya modlarına ihtiyaç duymadan dil engellerini ortadan kaldırır.
+  ---
 
-  <br><br>
+  <b>TR:</b> TranslateNX, Nintendo Switch için devrim niteliğinde anlık çeviri aracıdır. Oyunlardaki metinleri doğrudan okuyup anında çevirerek, oyun yamalarına veya modlarına ihtiyaç duymadan dil engellerini ortadan kaldırır.
+  </p>
 
-  <a href="#-english-setup-and-usage-guide">
+  <br>
+
+  <a href="#setup-and-usage-guide">
     <img src="https://img.shields.io/badge/Language-English-blue?style=for-the-badge" alt="English">
   </a>
   &nbsp;&nbsp;
-  <a href="#-türkçe-kurulum-ve-kullanım-rehberi">
+  <a href="#kurulum-ve-kullanım-rehberi">
     <img src="https://img.shields.io/badge/Dil-Türkçe-red?style=for-the-badge" alt="Türkçe">
   </a>
 </div>
 
 ---
 
-## EN English Setup and Usage Guide
+## Setup and Usage Guide
 
 ### ✨ Features
 * **Real-time Translation:** Translate on-screen game text instantly.
@@ -95,7 +99,7 @@ You can enter your API keys into the app using one of two methods:
 
 ---
 
-## 🇹🇷 Türkçe Kurulum ve Kullanım Rehberi
+## Kurulum ve Kullanım Rehberi
 
 ### ✨ Özellikler
 * **Anlık Çeviri:** Oyun oynarken ekrandaki yazıları anında Türkçe'ye çevirin.
