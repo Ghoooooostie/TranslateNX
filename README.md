@@ -30,7 +30,7 @@
 * **Multiple Service Options:** Supports Google Cloud Vision, OCR.space, DeepL, Google Cloud Translate, and MyMemory.
 
 <div align="center">
-  <img src="assets/TranslateNX4EN.png" alt="TranslateNX Screenshot" width="600">
+  <img src="assets/TranslateNX4EN.png" alt="TranslateNX Screenshot" width="1000">
 </div>
 
 ### ⚠️ Step 1: Critical Prep (Required)
@@ -115,7 +115,7 @@ You can enter your API keys into the app using one of two methods:
 * **Çoklu Servis Seçeneği:** Google Cloud Vision, OCR.space, DeepL, Google Cloud Translate ve MyMemory destekler.
 
 <div align="center">
-  <img src="assets/screenshot1.png" alt="TranslateNX Ekran Görüntüsü" width="600">
+  <img src="assets/TranslateNX4TR.png" alt="TranslateNX Ekran Görüntüsü" width="1000">
 </div>
 
 ### ⚠️ 1. Aşama: Kritik Ön Hazırlık (Zorunlu)
