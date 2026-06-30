@@ -46,6 +46,7 @@ To prevent your console from crashing, you must increase the **UltraHand memory 
 You can download and install the application directly on your Switch via the HB App Store.
 
 <div align="center">
+   <a href="https://hb-app.store/switch/TranslateNX">
   <img src="assets/hbappstore.png" alt="HB App Store" width="250">
   <br>
   <a href="https://apps.fortheusers.org/switch/TranslateNX">HB Store Download Link</a>
