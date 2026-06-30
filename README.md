@@ -30,7 +30,7 @@
 * **Multiple Service Options:** Supports Google Cloud Vision, OCR.space, DeepL, Google Cloud Translate, and MyMemory.
 
 <div align="center">
-  <img src="assets/screenshot1.png" alt="TranslateNX Screenshot" width="600">
+  <img src="assets/TranslateNX4EN.png" alt="TranslateNX Screenshot" width="600">
 </div>
 
 ### ⚠️ Step 1: Critical Prep (Required)
