@@ -20,7 +20,7 @@
 
 ---
 
-## 🇬🇧 English Setup and Usage Guide
+## 🇺🇸 English Setup and Usage Guide
 
 ### ✨ Features
 * **Real-time Translation:** Translate on-screen game text instantly.
