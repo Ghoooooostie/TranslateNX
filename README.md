@@ -54,7 +54,7 @@ You can download and install the application directly on your Switch via the HB 
 
 **Method 2: Manual Installation**
 You can install the application by downloading it on your computer and transferring it to your SD card.
-* Download the latest release `.zip` file. Extract it and drag all the contents directly to the root of your SD card. The files are already placed in their correct folder paths.
+* Download the [latest release](https://github.com/sertay1/TranslateNX/releases) `.zip` file. Extract it and drag all the contents directly to the root of your SD card. The files are already placed in their correct folder paths.
 
 ### 🔑 Step 3: Getting API Keys
 TranslateNX needs services to read (OCR) and translate text. For the best performance, we highly recommend using Google Cloud Vision for OCR and DeepL for Translation.
@@ -131,6 +131,7 @@ Cihazın çökmesini (crash) önlemek için **UltraHand bellek ayarını** deği
 Uygulamayı doğrudan Switch üzerinden HB App Store aracılığıyla indirip kurabilirsiniz.
 
 <div align="center">
+   <a href="https://hb-app.store/switch/TranslateNX">
   <img src="assets/hbappstore.png" alt="HB App Store" width="250">
   <br>
   <a href="https://apps.fortheusers.org/switch/TranslateNX">HB Store İndirme Linki</a>
@@ -139,7 +140,7 @@ Uygulamayı doğrudan Switch üzerinden HB App Store aracılığıyla indirip ku
 
 **Yöntem 2: Manuel Kurulum**
 Uygulamayı bilgisayarınıza indirip SD kartınıza atarak kurabilirsiniz.
-* İndirdiğiniz en güncel sürüm `.zip` dosyasını bilgisayara çıkartın. Çıkan tüm dosyaları doğrudan SD kartınızın ana dizinine sürükleyip bırakın (Dosyalar kendi yollarına hazır yerleştirilmiştir).
+* İndirdiğiniz [en güncel sürüm](https://github.com/sertay1/TranslateNX/releases) `.zip` dosyasını bilgisayara çıkartın. Çıkan tüm dosyaları doğrudan SD kartınızın ana dizinine sürükleyip bırakın (Dosyalar kendi yollarına hazır yerleştirilmiştir).
 
 ### 🔑 3. Aşama: Gerekli API'lerin Alınması
 TranslateNX'in en iyi performansla çalışması için iki farklı sisteme ihtiyacı vardır. En iyi, en hızlı ve ücretsiz deneyim için OCR olarak **Google Cloud Vision**, çeviri için ise **DeepL** kullanmanızı tavsiye ederiz.
