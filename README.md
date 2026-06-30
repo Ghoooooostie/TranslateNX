@@ -26,7 +26,7 @@
 
 ---
 
-## Setup and Usage Guide
+## EN Setup and Usage Guide
 
 ### ✨ Features
 * **Real-time Translation:** Translate on-screen game text instantly.
@@ -101,7 +101,7 @@ You can enter your API keys into the app using one of two methods:
 
 ---
 
-## Kurulum ve Kullanım Rehberi
+## TR Kurulum ve Kullanım Rehberi
 
 ### ✨ Özellikler
 * **Anlık Çeviri:** Oyun oynarken ekrandaki yazıları anında Türkçe'ye çevirin.
