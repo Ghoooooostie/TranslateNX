@@ -81,7 +81,7 @@ TranslateNX needs services to read (OCR) and translate text. For the best perfor
 
 **2. Google Cloud Translate (500,000 Characters/Month) — Alternative**
 *(Note: It may ask for card details and put a small hold during signup, but it is free as long as you stay within the quota).*
-* Go to [Google Cloud Translate](https://console.cloud.google.com/) and register.
+* Go to [Google Cloud Translate](https://cloud.google.com/translate) and register.
 * Enable the **Cloud Translation API**.
 * Go to **Credentials > Create Credentials > API Key**.
 * Name your API, select Cloud Translation API from restrictions, and click Create.
@@ -167,7 +167,7 @@ TranslateNX'in en iyi performansla çalışması için iki farklı sisteme ihtiy
 
 **2. Google Cloud Translate (Aylık 500.000 Karakter) — Alternatif**
 *(Not: Kayıt sırasında kart bilgisi isteyebilir ve küçük bir provizyon ücreti kesip iade edebilir. Aylık kotayı aşmadığınız sürece tamamen ücretsizdir).*
-* [Google Cloud Translate](https://console.cloud.google.com/) adresine gidin ve kayıt işlemlerini tamamlayın.
+* [Google Cloud Translate](https://cloud.google.com/translate) adresine gidin ve kayıt işlemlerini tamamlayın.
 * **Cloud Translation API** sayfasında "Enable" butonuna basın.
 * **Credentials** sekmesine girip **Create Credentials > API Key** yolunu izleyin.
 * API'nize isim verin, kısıtlamalar bölümünden Cloud Translation API'yi seçip Create butonuna basın.
