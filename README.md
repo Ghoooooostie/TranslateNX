@@ -62,7 +62,7 @@ TranslateNX needs services to read (OCR) and translate text. For the best perfor
 
 #### 🔍 OCR API Options
 **1. Google Cloud Vision (1000 Uses/Month) — ⭐ RECOMMENDED**
-* Go to [Google Cloud Vision](https://console.cloud.google.com/) and click "Try Vision AI Free" to complete registration.
+* Go to [Google Cloud Vision](https://cloud.google.com/vision) and click "Try Vision AI Free" to complete registration.
 * On the Cloud Vision API page, click the "Enable" button.
 * Go to the **Credentials** tab on the left menu. Select **Create Credentials > API Key** from the top.
 * Name your API. In the *Select API restrictions* section, choose **Cloud Vision API**, click OK, and then Create. Your API key will appear in seconds.
@@ -148,7 +148,7 @@ TranslateNX'in en iyi performansla çalışması için iki farklı sisteme ihtiy
 
 #### 🔍 OCR API Seçenekleri
 **1. Google Cloud Vision (Aylık 1000 Kullanım) — ⭐ ÖNERİLEN**
-* [Google Cloud Vision](https://console.cloud.google.com/) adresine gidin ve "Try Vision AI Free" butonuna tıklayıp gerekli kayıt işlemlerini tamamlayın.
+* [Google Cloud Vision]((https://cloud.google.com/vision)) adresine gidin ve "Try Vision AI Free" butonuna tıklayıp gerekli kayıt işlemlerini tamamlayın.
 * Açılan Cloud Vision API sayfasında "Enable" (Etkinleştir) butonuna basın.
 * Sol menüden **Credentials** (Kimlik Bilgileri) sekmesine girin. Üst kısımdan **Create Credentials > API Key** yolunu izleyin.
 * API'nize bir isim verin. *Select API restrictions* kısmından **Cloud Vision API**'yi seçin ve OK'a, ardından Create'e basın. API anahtarınız saniyeler içinde ekranda belirecektir.
