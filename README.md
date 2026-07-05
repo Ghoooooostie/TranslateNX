@@ -192,6 +192,16 @@ Aldığınız API anahtarlarını uygulamaya tanıtmak için aşağıdaki iki y�
 
 ---
 
+## 🔗 İletişim ve Bağış
+
+### SertAy
+
+| Linkler | QR Kod |
+| :--- | :--- |
+| **SertAy Tüm Linkler:** [Linktree Sayfam](https://linktr.ee/yamanx) | <a href="https://linktr.ee/yamanx"><img src="romfs/qr_SertAyTumLinkler.png" width="120"/></a> |
+
+---
+
 ## 📄 License / Lisans
 
 Tüm hakları saklıdır (All Rights Reserved) — © 2026 SertAy.  
