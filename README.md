@@ -198,7 +198,7 @@ Aldığınız API anahtarlarını uygulamaya tanıtmak için aşağıdaki iki y�
 
 | Linkler | QR Kod |
 | :--- | :--- |
-| **SertAy Tüm Linkler:** [Linktree Sayfam](https://linktr.ee/yamanx) | <a href="https://linktr.ee/yamanx"><img src="romfs/qr_SertAyTumLinkler.png" width="120"/></a> |
+| **SertAy Tüm Linkler:** [Linktree Sayfam](https://linktr.ee/yamanx) | <a href="https://linktr.ee/yamanx"><img src="assets/qr_SertAyTumLinkler.png" width="120"/></a> |
 
 ---
 
