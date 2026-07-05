@@ -106,6 +106,16 @@ You can enter your API keys into the app using one of two methods:
 
 ---
 
+## 🔗 Contact and Donate
+
+### SertAy
+
+| Links | QR Code |
+| :--- | :--- |
+| **All Links:** [My Linktree](https://linktr.ee/yamanx) | <a href="https://linktr.ee/yamanx"><img src="assets/qr_SertAyTumLinkler.png" width="120"/></a> |
+
+---
+
 ## (TR) Kurulum ve Kullanım Rehberi
 
 ### ✨ Özellikler
@@ -198,7 +208,7 @@ Aldığınız API anahtarlarını uygulamaya tanıtmak için aşağıdaki iki y�
 
 | Linkler | QR Kod |
 | :--- | :--- |
-| **SertAy Tüm Linkler:** [Linktree Sayfam](https://linktr.ee/yamanx) | <a href="https://linktr.ee/yamanx"><img src="assets/qr_SertAyTumLinkler.png" width="120"/></a> |
+| **Tüm Linkler:** [Linktree Sayfam](https://linktr.ee/yamanx) | <a href="https://linktr.ee/yamanx"><img src="assets/qr_SertAyTumLinkler.png" width="120"/></a> |
 
 ---
 
