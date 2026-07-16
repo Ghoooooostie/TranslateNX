@@ -89,6 +89,17 @@ TranslateNX needs services to read (OCR) and translate text. For the best perfor
 **3. MyMemory (5,000 Characters/Day) — Fallback**
 This is built-in. No API key is required. Simply select it from the app settings if you need a quick fallback.
 
+#### 🤖 AI API Options
+**1. Puter AI — ⭐ RECOMMENDED**
+* Go to [Puter.com](https://puter.com) and create a free account.
+* Once logged in, open the developer dashboard to generate your API key.
+* Puter AI offers generous limits for executing AI-based translations, providing context-aware and natural-sounding results.
+
+**2. Google Gemini AI — Alternative**
+* Go to [Google AI Studio](https://aistudio.google.com) and sign in with your Google account.
+* Click on **"Get API key"** from the left menu and create a new key.
+* Gemini provides extremely fast and smart context-based translations for complex game scenarios.
+
 ### 📝 Step 4: Entering API Keys
 You can enter your API keys into the app using one of two methods:
 * **Method 1 (Via Switch):** Open the TranslateNX app from the Hbmenu and type your API keys directly into the app interface.
@@ -184,6 +195,17 @@ TranslateNX'in en iyi performansla çalışması için iki farklı sisteme ihtiy
 
 **3. MyMemory (Günlük 5.000 Karakter) — Kurtarıcı**
 Bu sistem TranslateNX içinde hazır kurulu gelir. API anahtarı almanıza gerek yoktur. Ayarlardan direkt seçerek zor anlarda pratik bir şekilde kullanabilirsiniz.
+
+#### 🤖 Yapay Zeka (AI) API Seçenekleri
+**1. Puter AI — ⭐ ÖNERİLEN**
+* [Puter.com](https://puter.com) adresine gidin ve ücretsiz bir hesap oluşturun.
+* Hesabınıza giriş yaptıktan sonra geliştirici paneli üzerinden API anahtarınızı (API key) oluşturun.
+* Puter AI, oyun diyaloglarının bağlamını çok iyi anlayan ve oldukça doğal hissettiren çeviriler sunan cömert limitlere sahip bir yapay zekadır.
+  
+**2. Google Gemini AI — Alternatif**
+* [Google AI Studio](https://aistudio.google.com) adresine gidin ve Google hesabınızla giriş yapın.
+* Sol menüden **"Get API key"** (API anahtarı al) seçeneğine tıklayın ve yeni bir anahtar oluşturun.
+* Gemini, karmaşık oyun metinlerini çok daha hızlı ve akıllı bir şekilde analiz ederek mükemmel hikaye çevirileri sunar.
 
 ### 📝 4. Aşama: API Anahtarları Nereye Girilecek?
 Aldığınız API anahtarlarını uygulamaya tanıtmak için aşağıdaki iki yöntemden birini tercih edebilirsiniz:
