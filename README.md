@@ -25,7 +25,7 @@
 ### ✨ Features
 * **Real-time Translation:** Translate on-screen game text instantly.
 * **OCR Technology:** Directly reads text from the screen, no game mods required.
-* **Wide Language Support:** Supports over 20 languages (Turkish, English, Japanese, Korean, Chinese, German, French, Spanish, Italian, Russian, Bulgarian, Czech, Danish, Dutch, Finnish, Greek, Hungarian, Polish, Portuguese, Slovenian, Swedish).
+* **Wide Language Support:** Support for 104 different languages.
 * **Practical Use:** Translate quickly without leaving the game using the UltraHand Overlay menu.
 * **Multiple Service Options:** Supports Google Cloud Vision, OCR.space, DeepL, Google Cloud Translate, and MyMemory.
 
@@ -132,7 +132,7 @@ You can enter your API keys into the app using one of two methods:
 ### ✨ Özellikler
 * **Anlık Çeviri:** Oyun oynarken ekrandaki yazıları anında Türkçe'ye çevirin.
 * **OCR Teknolojisi:** Ekrandaki metni doğrudan okur, oyun modlarına ihtiyaç duymaz.
-* **Geniş Dil Desteği:** 20'den fazla dili destekler (Türkçe, İngilizce, Japonca, Korece, Çince, Almanca, Fransızca, İspanyolca, İtalyanca, Rusça, Bulgarca, Çekçe, Danca, Felemenkçe, Fince, Yunanca, Macarca, Lehçe, Portekizce, Slovence, İsveççe).
+* **Geniş Dil Desteği:** 104 farklı dil desteği.
 * **Pratik Kullanım:** UltraHand Overlay menüsü sayesinde oyundan çıkmadan hızlıca çeviri yapın.
 * **Çoklu Servis Seçeneği:** Google Cloud Vision, OCR.space, DeepL, Google Cloud Translate ve MyMemory destekler.
 
