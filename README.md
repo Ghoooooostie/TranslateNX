@@ -40,7 +40,7 @@ To prevent your console from crashing, you must increase the **UltraHand memory 
 3. Change **Overlay Memory** from **4MB to 8MB**.
 
 ### 💾 Step 2: Installation
-**Requirements:** You MUST have [nx-ovlloader](https://github.com/WerWolv/nx-ovlloader) and [Ultrahand-Overlay](https://github.com/ppkantorski/Ultrahand-Overlay) installed for this app to work!
+**Requirements:** You MUST have [nx-ovlloader](https://github.com/ppkantorski/nx-ovlloader) and [Ultrahand-Overlay](https://github.com/ppkantorski/Ultrahand-Overlay) installed for this app to work!
 
 **Method 1: Homebrew App Store (Automatic Installation)**
 You can download and install the application directly on your Switch via the HB App Store.
@@ -147,7 +147,7 @@ Cihazın çökmesini (crash) önlemek için **UltraHand bellek ayarını** deği
 3. **Overlay Memory** değerini **4MB'den 8MB'a** yükseltin.
 
 ### 💾 2. Aşama: Kurulum
-**Zorunlu Gereksinimler:** Uygulamanın çalışması için cihazınızda [nx-ovlloader](https://github.com/WerWolv/nx-ovlloader) ve [Ultrahand-Overlay](https://github.com/ppkantorski/Ultrahand-Overlay) yüklü olmak ZORUNDADIR!
+**Zorunlu Gereksinimler:** Uygulamanın çalışması için cihazınızda [nx-ovlloader](https://github.com/ppkantorski/nx-ovlloader) ve [Ultrahand-Overlay](https://github.com/ppkantorski/Ultrahand-Overlay) yüklü olmak ZORUNDADIR!
 
 **Yöntem 1: Homebrew App Store (Otomatik Kurulum)**
 Uygulamayı doğrudan Switch üzerinden HB App Store aracılığıyla indirip kurabilirsiniz.
