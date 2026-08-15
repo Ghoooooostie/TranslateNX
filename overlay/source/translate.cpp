@@ -288,4 +288,131 @@ TranslateResult runGoogleCloud(const std::vector<std::string>& lines, const std:
     return result;
 }
 
+// ─── OpenAI 兼容翻译模型 (自定义端点) ───────────────────────────────────────
+TranslateResult runOpenAiTranslate(const std::vector<std::string>& lines,
+                                    const std::string& apiKey,
+                                    const std::string& baseUrl,
+                                    const std::string& model,
+                                    const std::string& sourceLang,
+                                    const std::string& targetLang) {
+    TranslateResult result;
+    if (apiKey.empty() || baseUrl.empty() || model.empty()) {
+        result.errorMsg = "OpenAI Translate: API key / Base URL / Model girilmemiş (Ayarlar'dan girin)";
+        return result;
+    }
+    if (lines.empty()) {
+        result.errorMsg = "OpenAI Translate: Çevrilecek metin yok";
+        return result;
+    }
+
+    // Metinleri birleştir (satır korunsun)
+    std::string text;
+    for (size_t i = 0; i < lines.size(); ++i) {
+        text += lines[i];
+        if (i < lines.size() - 1) text += "\n";
+    }
+
+    std::string srcName = (sourceLang == "JA") ? "Japanese" :
+                          (sourceLang == "KO") ? "Korean" :
+                          (sourceLang == "ZH") ? "Chinese" :
+                          (sourceLang == "EN") ? "English" :
+                          (sourceLang == "TR") ? "Turkish" :
+                          (sourceLang == "AUTO" || sourceLang.empty()) ? "auto-detected" : sourceLang;
+    std::string dstName = (targetLang == "JA") ? "Japanese" :
+                          (targetLang == "KO") ? "Korean" :
+                          (targetLang == "ZH") ? "Chinese" :
+                          (targetLang == "EN") ? "English" :
+                          (targetLang == "TR") ? "Turkish" : targetLang;
+
+    std::string prompt = "Translate the following text from " + srcName + " to " + dstName +
+                         ". Preserve line breaks exactly (one translated line per input line). "
+                         "Output only the translation, no explanations:\n\n" + text;
+
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "model", model.c_str());
+    cJSON* messages = cJSON_CreateArray();
+
+    cJSON* sys = cJSON_CreateObject();
+    cJSON_AddStringToObject(sys, "role", "system");
+    cJSON_AddStringToObject(sys, "content", "You are a precise translation engine. Output only the translation.");
+    cJSON_AddItemToArray(messages, sys);
+
+    cJSON* usr = cJSON_CreateObject();
+    cJSON_AddStringToObject(usr, "role", "user");
+    cJSON_AddStringToObject(usr, "content", prompt.c_str());
+    cJSON_AddItemToArray(messages, usr);
+
+    cJSON_AddItemToObject(root, "messages", messages);
+
+    char* jsonStr = cJSON_PrintUnformatted(root);
+    std::string body(jsonStr);
+    free(jsonStr);
+    cJSON_Delete(root);
+
+    std::string url = baseUrl;
+    while (!url.empty() && url.back() == '/') url.pop_back();
+    url += "/chat/completions";
+
+    HttpResponse resp;
+    for (int retry = 0; retry < 3; retry++) {
+        resp = HttpClient::post(url, body, {
+            "Content-Type: application/json",
+            "Authorization: Bearer " + apiKey
+        });
+        if (resp.ok()) break;
+        svcSleepThread(1000000000ull);
+    }
+
+    if (!resp.ok()) {
+        if (resp.statusCode == 0) {
+            result.errorMsg = "OpenAI Translate: Bağlantı kurulamadı — " + resp.errorStr;
+        } else if (resp.statusCode == 401) {
+            result.errorMsg = "OpenAI Translate: Kimlik doğrulama başarısız (HTTP 401) — API key geçersiz";
+        } else if (resp.statusCode == 404) {
+            result.errorMsg = "OpenAI Translate: Model bulunamadı (HTTP 404) — Base URL / model adı yanlış";
+        } else if (resp.statusCode == 429) {
+            result.errorMsg = "OpenAI Translate: İstek sınırı aşıldı (HTTP 429) — kota doldu";
+        } else if (resp.statusCode == 500) {
+            result.errorMsg = "OpenAI Translate: Sunucu hatası (HTTP 500)";
+        } else {
+            result.errorMsg = "OpenAI Translate: HTTP " + std::to_string(resp.statusCode);
+        }
+        return result;
+    }
+
+    cJSON* r = cJSON_Parse(resp.body.c_str());
+    if (!r) {
+        result.errorMsg = "OpenAI Translate: Sunucu yanıtı işlenemedi";
+        return result;
+    }
+    std::string translated;
+    cJSON* choices = cJSON_GetObjectItem(r, "choices");
+    if (cJSON_IsArray(choices) && cJSON_GetArraySize(choices) > 0) {
+        cJSON* ch = cJSON_GetArrayItem(choices, 0);
+        cJSON* m = cJSON_GetObjectItem(ch, "message");
+        if (m) {
+            cJSON* c = cJSON_GetObjectItem(m, "content");
+            if (c && cJSON_IsString(c)) translated = c->valuestring;
+        }
+    }
+    cJSON_Delete(r);
+
+    if (translated.empty()) {
+        result.errorMsg = "OpenAI Translate: Boş yanıt döndü";
+        return result;
+    }
+
+    // Satırlara böl
+    size_t pos = 0;
+    std::string s = translated;
+    while ((pos = s.find('\n')) != std::string::npos) {
+        result.translatedLines.push_back(s.substr(0, pos));
+        s.erase(0, pos + 1);
+    }
+    result.translatedLines.push_back(s);
+    result.translatedText = translated;
+    result.success = true;
+    return result;
+}
+
 } // namespace Translate

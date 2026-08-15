@@ -3,13 +3,15 @@
 
 enum class OcrApi {
     OcrSpace,
-    GoogleVision
+    GoogleVision,
+    OpenAiVision
 };
 
 enum class TranslateApi {
     MyMemory,
     DeepL,
-    GoogleCloud
+    GoogleCloud,
+    OpenAiTranslate
 };
 
 struct Config {
@@ -21,6 +23,12 @@ struct Config {
     
     std::string   ocrApiKey;                // OCR.space
     std::string   visionApiKey;             // Google Vision
+
+    // OpenAI 兼容模型 (自定义端点)
+    std::string   openaiApiKey;             // Bearer token (sk-...)
+    std::string   openaiBaseUrl;            // 自定义基址, 如 https://api.openai.com/v1
+    std::string   openaiModel;              // 视觉模型名 (OCR 用), 如 gpt-4o / 自建模型
+    std::string   openaiTransModel;         // 翻译模型名, 如 gpt-4o-mini / 自建模型
     
     std::string   deeplApiKey;              // DeepL
     std::string   googleTransApiKey;        // Google Cloud Translate

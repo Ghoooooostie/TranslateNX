@@ -59,11 +59,13 @@ Config load() {
     Config cfg;
     std::string ocrStr = iniGet(CONFIG_PATH, "ocr_api");
     if (ocrStr == "vision") cfg.ocrApi = OcrApi::GoogleVision;
+    else if (ocrStr == "openai") cfg.ocrApi = OcrApi::OpenAiVision;
     else cfg.ocrApi = OcrApi::OcrSpace;
 
     std::string transStr = iniGet(CONFIG_PATH, "translate_api");
     if (transStr == "deepl") cfg.translateApi = TranslateApi::DeepL;
     else if (transStr == "googlecloud") cfg.translateApi = TranslateApi::GoogleCloud;
+    else if (transStr == "openai") cfg.translateApi = TranslateApi::OpenAiTranslate;
     else cfg.translateApi = TranslateApi::MyMemory;
 
     cfg.srcLang          = iniGet(CONFIG_PATH, "source_lang");
@@ -76,6 +78,10 @@ Config load() {
     
     cfg.ocrApiKey        = iniGet(CONFIG_PATH, "ocr_api_key");
     cfg.visionApiKey     = iniGet(CONFIG_PATH, "vision_api_key");
+    cfg.openaiApiKey     = iniGet(CONFIG_PATH, "openai_api_key");
+    cfg.openaiBaseUrl    = iniGet(CONFIG_PATH, "openai_base_url");
+    cfg.openaiModel      = iniGet(CONFIG_PATH, "openai_model");
+    cfg.openaiTransModel = iniGet(CONFIG_PATH, "openai_trans_model");
     
     cfg.deeplApiKey      = iniGet(CONFIG_PATH, "deepl_api_key");
     cfg.googleTransApiKey = iniGet(CONFIG_PATH, "google_trans_api_key");
@@ -98,13 +104,16 @@ void save(const Config& cfg) {
     FILE* f = fopen(CONFIG_PATH, "r");
     std::vector<std::string> lines;
     bool foundOcrApi = false, foundTransApi = false, foundSrc = false, foundDst = false, foundUi = false;
+    bool foundOaiModel = false, foundOaiTransModel = false;
     
     const char* ocrStr = "ocrspace";
     if (cfg.ocrApi == OcrApi::GoogleVision) ocrStr = "vision";
+    else if (cfg.ocrApi == OcrApi::OpenAiVision) ocrStr = "openai";
 
     const char* transStr = "mymemory";
     if (cfg.translateApi == TranslateApi::DeepL) transStr = "deepl";
     else if (cfg.translateApi == TranslateApi::GoogleCloud) transStr = "googlecloud";
+    else if (cfg.translateApi == TranslateApi::OpenAiTranslate) transStr = "openai";
 
     if (f) {
         char line[512];
@@ -121,6 +130,10 @@ void save(const Config& cfg) {
                 std::string ul = cfg.uiLang;  for(auto& c:ul) c=tolower((unsigned char)c);
                 
                 if (lkey == "ocr_api") { lines.push_back("ocr_api=" + std::string(ocrStr) + "\n"); foundOcrApi = true; continue; }
+                if (lkey == "openai_api_key") { lines.push_back("openai_api_key=" + cfg.openaiApiKey + "\n"); continue; }
+                if (lkey == "openai_base_url") { lines.push_back("openai_base_url=" + cfg.openaiBaseUrl + "\n"); continue; }
+                if (lkey == "openai_model") { lines.push_back("openai_model=" + cfg.openaiModel + "\n"); foundOaiModel = true; continue; }
+                if (lkey == "openai_trans_model") { lines.push_back("openai_trans_model=" + cfg.openaiTransModel + "\n"); foundOaiTransModel = true; continue; }
                 if (lkey == "translate_api") { lines.push_back("translate_api=" + std::string(transStr) + "\n"); foundTransApi = true; continue; }
                 if (lkey == "src_lang" || lkey == "source_lang") { lines.push_back("src_lang=" + sl + "\n"); foundSrc = true; continue; }
                 if (lkey == "dst_lang" || lkey == "target_lang") { lines.push_back("dst_lang=" + dl + "\n"); foundDst = true; continue; }
@@ -140,6 +153,8 @@ void save(const Config& cfg) {
     if (!foundSrc) lines.push_back("src_lang=" + sl + "\n");
     if (!foundDst) lines.push_back("dst_lang=" + dl + "\n");
     if (!foundUi) lines.push_back("ui_lang=" + ul + "\n");
+    if (!foundOaiModel) lines.push_back("openai_model=" + cfg.openaiModel + "\n");
+    if (!foundOaiTransModel) lines.push_back("openai_trans_model=" + cfg.openaiTransModel + "\n");
 
     f = fopen(CONFIG_PATH, "w");
     if (f) {

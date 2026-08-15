@@ -116,33 +116,32 @@ OcrResult runOcrSpace(std::vector<uint8_t> jpegData, const std::string& apiKey, 
     else if (ocrLang == "sl") ocrLang = "slv";
     else if (ocrLang == "sv") ocrLang = "swe";
     
+    // CJK ve Kiril/Yunanca için Engine 1 (OCR.space CJK uzman motoru, daha hızlı ve doğru)
     std::string ocrEngine = "2";
-    if (ocrLang == "jpn" || ocrLang == "kor" || ocrLang == "chs" || ocrLang == "rus" || ocrLang == "bul" || ocrLang == "gre" || ocrLang == "tur") {
+    if (ocrLang == "jpn" || ocrLang == "kor" || ocrLang == "chs" ||
+        ocrLang == "rus" || ocrLang == "bul" || ocrLang == "gre" || ocrLang == "tur") {
         ocrEngine = "1";
     }
 
     std::string keyToUse = apiKey.empty() ? "helloworld" : apiKey;
     HttpResponse resp;
-    for (int retry = 0; retry < 3; retry++) {
+    // Tek deneme: OCR.space zaten kendi içinde kuyruklu, 3x retry + 1sn bekle gecikmeyi büyütüyor
+    {
         resp = HttpClient::postMultipart(
             url,
             jpegData,
             "file",
             "screenshot.jpg",
             {
-                {"apikey",        keyToUse},
-                {"language",      ocrLang},
-                {"isTable",       "false"},
-                {"scale",         "true"},
-                {"OCREngine",     ocrEngine},
-                {"isOverlayRequired", "true"}  // Bounding box için true
+                {"apikey",             keyToUse},
+                {"language",           ocrLang},
+                {"isTable",            "false"},
+                {"scale",              "false"},   // sunucu tarafı büyütmeyi kapat (çok yavaşlatıyor)
+                {"OCREngine",          ocrEngine},
+                {"detectOrientation",  "false"},   // oyun ekranı döndürülmüş olmaz
+                {"isOverlayRequired",  "true"}     // bounding box gerekli (satır konumlandırma)
             }
         );
-        
-        if (resp.ok()) {
-            break;
-        }
-        svcSleepThread(1000000000ull); // 1 saniye bekle
     }
 
     if (!resp.ok()) {
@@ -320,6 +319,163 @@ OcrResult runGoogleVision(std::vector<uint8_t> jpegData,
     // Geriye uyumluluk için fullText
     result.fullText = jsonExtract(resp.body, "description");
 
+    result.success = true;
+    return result;
+}
+
+// OpenAI 兼容视觉大模型 (自定义端点) — 截图里ki metni ayıklar
+OcrResult runOpenAiVision(std::vector<uint8_t> jpegData,
+                          const std::string& apiKey,
+                          const std::string& baseUrl,
+                          const std::string& model,
+                          const std::string& lang) {
+    OcrResult result;
+    if (jpegData.empty()) {
+        result.errorMsg = "OCR Hatası: Ekran görüntüsü boş";
+        return result;
+    }
+    if (apiKey.empty() || baseUrl.empty() || model.empty()) {
+        result.errorMsg = "OpenAI Vision: API key / Base URL / Model girilmemiş (Ayarlar'dan girin)";
+        return result;
+    }
+
+    // Base64 encode
+    std::string b64;
+    b64.reserve(((jpegData.size() + 2) / 3) * 4);
+    static const char* b64chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    for (size_t i = 0; i < jpegData.size(); i += 3) {
+        uint32_t val = (jpegData[i] << 16);
+        if (i + 1 < jpegData.size()) val |= (jpegData[i+1] << 8);
+        if (i + 2 < jpegData.size()) val |= jpegData[i+2];
+        b64 += b64chars[(val >> 18) & 0x3F];
+        b64 += b64chars[(val >> 12) & 0x3F];
+        b64 += (i + 1 < jpegData.size()) ? b64chars[(val >> 6) & 0x3F] : '=';
+        b64 += (i + 2 < jpegData.size()) ? b64chars[val & 0x3F] : '=';
+    }
+    jpegData.clear(); jpegData.shrink_to_fit();
+
+    // Dil ipucu
+    std::string langHint = (lang == "JA") ? "Japanese" :
+                           (lang == "KO") ? "Korean" :
+                           (lang == "ZH") ? "Chinese" :
+                           (lang == "EN") ? "English" :
+                           (lang == "TR") ? "Turkish" : lang;
+    std::string prompt = "Extract all text from this screenshot, preserving line breaks. "
+                         "The text is in " + langHint + ". Output only the text, one line per original line, "
+                         "no explanations.";
+
+    // JSON body (cJSON)
+    cJSON* root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "model", model.c_str());
+    cJSON* messages = cJSON_CreateArray();
+    cJSON* msg = cJSON_CreateObject();
+    cJSON_AddStringToObject(msg, "role", "user");
+    cJSON* content = cJSON_CreateArray();
+
+    cJSON* textPart = cJSON_CreateObject();
+    cJSON_AddStringToObject(textPart, "type", "text");
+    cJSON_AddStringToObject(textPart, "text", prompt.c_str());
+    cJSON_AddItemToArray(content, textPart);
+
+    cJSON* imgPart = cJSON_CreateObject();
+    cJSON_AddStringToObject(imgPart, "type", "image_url");
+    cJSON* imgUrl = cJSON_CreateObject();
+    std::string dataUri = "data:image/jpeg;base64," + b64;
+    cJSON_AddStringToObject(imgUrl, "url", dataUri.c_str());
+    cJSON_AddItemToObject(imgPart, "image_url", imgUrl);
+    cJSON_AddItemToArray(content, imgPart);
+
+    cJSON_AddItemToObject(msg, "content", content);
+    cJSON_AddItemToArray(messages, msg);
+    cJSON_AddItemToObject(root, "messages", messages);
+
+    char* jsonStr = cJSON_PrintUnformatted(root);
+    std::string body(jsonStr);
+    free(jsonStr);
+    cJSON_Delete(root);
+
+    // Base URL sonunda / varsa temizle
+    std::string url = baseUrl;
+    while (!url.empty() && url.back() == '/') url.pop_back();
+    url += "/chat/completions";
+
+    HttpResponse resp;
+    for (int retry = 0; retry < 3; retry++) {
+        resp = HttpClient::post(url, body, {
+            "Content-Type: application/json",
+            "Authorization: Bearer " + apiKey
+        });
+        if (resp.ok()) break;
+        svcSleepThread(1000000000ull);
+    }
+
+    if (!resp.ok()) {
+        if (resp.statusCode == 0) {
+            result.errorMsg = "OpenAI Vision Hatası: Bağlantı kurulamadı — " + resp.errorStr;
+        } else if (resp.statusCode == 401) {
+            result.errorMsg = "OpenAI Vision Hatası: Kimlik doğrulama başarısız (HTTP 401) — API key geçersiz";
+        } else if (resp.statusCode == 404) {
+            result.errorMsg = "OpenAI Vision Hatası: Model bulunamadı (HTTP 404) — Base URL / model adı yanlış";
+        } else if (resp.statusCode == 429) {
+            result.errorMsg = "OpenAI Vision Hatası: İstek sınırı aşıldı (HTTP 429) — kota doldu";
+        } else if (resp.statusCode == 500) {
+            result.errorMsg = "OpenAI Vision Hatası: Sunucu hatası (HTTP 500)";
+        } else {
+            result.errorMsg = "OpenAI Vision Hatası: HTTP " + std::to_string(resp.statusCode);
+        }
+        return result;
+    }
+
+    // Yanıt: {"choices":[{"message":{"content":"..."}}]}
+    cJSON* r = cJSON_Parse(resp.body.c_str());
+    if (!r) {
+        result.errorMsg = "OpenAI Vision Hatası: Sunucu yanıtı işlenemedi";
+        return result;
+    }
+    std::string text;
+    cJSON* choices = cJSON_GetObjectItem(r, "choices");
+    if (cJSON_IsArray(choices) && cJSON_GetArraySize(choices) > 0) {
+        cJSON* ch = cJSON_GetArrayItem(choices, 0);
+        cJSON* m = cJSON_GetObjectItem(ch, "message");
+        if (m) {
+            cJSON* c = cJSON_GetObjectItem(m, "content");
+            if (c && cJSON_IsString(c)) text = c->valuestring;
+        }
+    }
+    if (text.empty()) {
+        cJSON* err = cJSON_GetObjectItem(r, "error");
+        if (err) {
+            cJSON* msg = cJSON_GetObjectItem(err, "message");
+            if (msg && cJSON_IsString(msg)) result.errorMsg = "OpenAI Vision: " + std::string(msg->valuestring);
+            else result.errorMsg = "OpenAI Vision: Görüntüde metin bulunamadı";
+        } else {
+            result.errorMsg = "OpenAI Vision: Görüntüde metin bulunamadı";
+        }
+        cJSON_Delete(r);
+        return result;
+    }
+    cJSON_Delete(r);
+
+    // Satırlara böl, her satıra dummy koordinat ver (Google Vision ile aynı davranış)
+    float y = 0.0f;
+    size_t pos = 0;
+    std::string s = text;
+    while ((pos = s.find('\n')) != std::string::npos) {
+        std::string line = s.substr(0, pos);
+        if (!line.empty()) {
+            OcrWord w; w.text = line;
+            w.x = 0.0f; w.y = y; w.w = 1.0f; w.h = 0.1f;
+            result.words.push_back(w); y += 0.1f;
+        }
+        s.erase(0, pos + 1);
+    }
+    if (!s.empty()) {
+        OcrWord w; w.text = s;
+        w.x = 0.0f; w.y = y; w.w = 1.0f; w.h = 0.1f;
+        result.words.push_back(w);
+    }
+    result.fullText = text;
     result.success = true;
     return result;
 }

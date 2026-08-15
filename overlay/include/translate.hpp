@@ -22,4 +22,11 @@ namespace Translate {
                                const std::string& apiKey,
                                const std::string& sourceLang,
                                const std::string& targetLang);
+
+    TranslateResult runOpenAiTranslate(const std::vector<std::string>& lines,
+                               const std::string& apiKey,
+                               const std::string& baseUrl,
+                               const std::string& model,
+                               const std::string& sourceLang,
+                               const std::string& targetLang);
 }

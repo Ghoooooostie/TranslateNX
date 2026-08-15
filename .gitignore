@@ -55,3 +55,5 @@ overlay/translatenx.nacp
 deploy_log.txt
 build_log.txt
 ftp_test.txt
+deploy_ftp.ps1
+overlay/build_log.txt

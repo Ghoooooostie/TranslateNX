@@ -23,4 +23,10 @@ namespace Ocr {
     OcrResult runGoogleVision(std::vector<uint8_t> jpegData,
                          const std::string& apiKey,
                          const std::string& lang = "ja");
+
+    OcrResult runOpenAiVision(std::vector<uint8_t> jpegData,
+                          const std::string& apiKey,
+                          const std::string& baseUrl,
+                          const std::string& model,
+                          const std::string& lang = "ja");
 }
