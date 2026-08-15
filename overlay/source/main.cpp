@@ -25,6 +25,7 @@ static std::vector<OcrWord> g_ocrWords;
 static std::vector<std::string> g_translatedLines;
 static std::string       g_errorText;
 static std::string       g_originalText;
+static Screenshot        g_lastShot;   // 裁剪后的截图（含 regionX/Y/W/H，用于 OCR box 还原）
 
 // ─── Yardımcı Fonksiyon: UI Çevirisi (tr / en / zh) ──────────────────────
 static std::string L(const std::string& tr, const std::string& en, const std::string& zh) {
@@ -37,6 +38,7 @@ static std::string L(const std::string& tr, const std::string& en, const std::st
 class SetupGui;
 class TranslateGui;
 class SettingsGui;
+class RegionEditorGui;
 class OnScreenOverlayGui;
 
 void reloadOverlay();
@@ -68,13 +70,13 @@ static void doTranslate(std::vector<uint8_t> jpegData) {
         }
         ocr = Ocr::runGoogleVision(jpegData, g_config.visionApiKey, g_config.srcLang);
     } else if (g_config.ocrApi == OcrApi::OpenAiVision) {
-        if (g_config.openaiApiKey.empty() || g_config.openaiBaseUrl.empty() || g_config.openaiModel.empty()) {
+        if (g_config.openaiVisionApiKey.empty() || g_config.openaiVisionBaseUrl.empty() || g_config.openaiModel.empty()) {
             std::lock_guard<std::mutex> lk(g_resultMutex);
             g_errorText   = L("OCR Hatası: OpenAI Vision ayarları eksik", "OCR Error: OpenAI Vision settings missing", "OCR 错误：未填写 OpenAI Vision 设置");
             g_translating = false;
             return;
         }
-        ocr = Ocr::runOpenAiVision(jpegData, g_config.openaiApiKey, g_config.openaiBaseUrl, g_config.openaiModel, g_config.srcLang);
+        ocr = Ocr::runOpenAiVision(jpegData, g_config.openaiVisionApiKey, g_config.openaiVisionBaseUrl, g_config.openaiModel, g_config.srcLang);
     } else {
         ocr = Ocr::runOcrSpace(jpegData, g_config.ocrApiKey, g_config.srcLang);
     }
@@ -88,9 +90,18 @@ static void doTranslate(std::vector<uint8_t> jpegData) {
 
     std::vector<std::string> linesToTranslate;
     std::vector<OcrWord> filteredWords;
+    // 若截图做了局部裁剪，把 OCR 返回(相对小图)的归一化 box 还原回整图(1280x720)坐标
+    const Screenshot& rs = g_lastShot;
     for (const auto& w : ocr.words) {
-        linesToTranslate.push_back(w.text);
-        filteredWords.push_back(w);
+        OcrWord rw = w;
+        if (rs.regionW > 0 && rs.regionH > 0) {
+            rw.x = (rs.regionX + w.x * rs.regionW) / 1280.0f;
+            rw.y = (rs.regionY + w.y * rs.regionH) / 720.0f;
+            rw.w = (w.w * rs.regionW) / 1280.0f;
+            rw.h = (w.h * rs.regionH) / 720.0f;
+        }
+        linesToTranslate.push_back(rw.text);
+        filteredWords.push_back(rw);
     }
 
     TranslateResult tr;
@@ -116,13 +127,13 @@ static void doTranslate(std::vector<uint8_t> jpegData) {
         }
         tr = Translate::runGoogleCloud(linesToTranslate, g_config.googleTransApiKey, g_config.srcLang, g_config.dstLang);
     } else if (g_config.translateApi == TranslateApi::OpenAiTranslate) {
-        if (g_config.openaiApiKey.empty() || g_config.openaiBaseUrl.empty() || g_config.openaiTransModel.empty()) {
+        if (g_config.openaiTransApiKey.empty() || g_config.openaiTransBaseUrl.empty() || g_config.openaiTransModel.empty()) {
             std::lock_guard<std::mutex> lk(g_resultMutex);
             g_errorText   = L("Çeviri Hatası: OpenAI Translate ayarları eksik", "Translation Error: OpenAI Translate settings missing", "翻译错误：未填写 OpenAI Translate 设置");
             g_translating = false;
             return;
         }
-        tr = Translate::runOpenAiTranslate(linesToTranslate, g_config.openaiApiKey, g_config.openaiBaseUrl, g_config.openaiTransModel, g_config.srcLang, g_config.dstLang);
+        tr = Translate::runOpenAiTranslate(linesToTranslate, g_config.openaiTransApiKey, g_config.openaiTransBaseUrl, g_config.openaiTransModel, g_config.srcLang, g_config.dstLang);
     } else {
         tr = Translate::runMyMemory(linesToTranslate, langPair);
     }
@@ -394,6 +405,21 @@ public:
         });
         list->addItem(m_uiLangItem);
 
+        list->addItem(new tsl::elm::CategoryHeader(L("TANIMA BÖLGESİ", "OCR REGION", "识别区域")));
+
+        auto* regionItem = new tsl::elm::ListItem(L("Tanıma Bölgesi (Yerel OCR)", "OCR Region (Local)", "识别区域（局部 OCR）"));
+        regionItem->setValue(g_config.ocrRegion.enabled
+            ? L("Açık (bölge seçildi)", "ON (region set)", "开 (已选区域)")
+            : L("Kapalı (tam ekran)", "OFF (full screen)", "关 (全屏)"));
+        regionItem->setClickListener([](u64 keys) -> bool {
+            if (keys & HidNpadButton_A) {
+                tsl::changeTo<RegionEditorGui>();
+                return true;
+            }
+            return false;
+        });
+        list->addItem(regionItem);
+
         list->addItem(new tsl::elm::CategoryHeader(L("OCR API ANAHTARLARI", "OCR API KEYS", "OCR API 密钥")));
 
         auto* editOcrItem = new tsl::elm::ListItem("OCR.space API Key");
@@ -420,23 +446,37 @@ public:
 
         list->addItem(new tsl::elm::CategoryHeader(L("OPENAI (ÖZEL MODEL)", "OPENAI (CUSTOM MODEL)", "OPENAI（自定义模型）")));
 
-        auto* openaiSet = new tsl::elm::ListItem(L("OpenAI Ayarları", "OpenAI Settings", "OpenAI 设置"));
-        bool oaiOk = !g_config.openaiApiKey.empty() && !g_config.openaiBaseUrl.empty();
-        openaiSet->setValue(oaiOk ? L("Aktif", "Set", "已设置") : L("Pasif", "None", "未设置"));
-        openaiSet->setValueColor(oaiOk ? tsl::Color(0, 15, 0, 15) : tsl::Color(15, 0, 0, 15));
-        list->addItem(openaiSet);
+        list->addItem(new tsl::elm::CategoryHeader(L("GÖRME (OCR)", "VISION (OCR)", "视觉模型（OCR）")));
 
-        auto* oaiVis = new tsl::elm::ListItem(L("Vision Model (OCR)", "Vision Model (OCR)", "视觉模型（OCR）"));
+        auto* oaiVisKey = new tsl::elm::ListItem(L("Vision API Key", "Vision API Key", "视觉 API Key"));
+        bool visOk = !g_config.openaiVisionApiKey.empty() && !g_config.openaiVisionBaseUrl.empty();
+        oaiVisKey->setValue(visOk ? L("Aktif", "Set", "已设置") : L("Pasif", "None", "未设置"));
+        oaiVisKey->setValueColor(visOk ? tsl::Color(0, 15, 0, 15) : tsl::Color(15, 0, 0, 15));
+        list->addItem(oaiVisKey);
+
+        auto* oaiVisUrl = new tsl::elm::ListItem(L("Vision Base URL", "Vision Base URL", "视觉接口地址"));
+        oaiVisUrl->setValue(g_config.openaiVisionBaseUrl.empty() ? L("Boş", "Empty", "空") : g_config.openaiVisionBaseUrl);
+        list->addItem(oaiVisUrl);
+
+        auto* oaiVis = new tsl::elm::ListItem(L("Vision Model", "Vision Model", "视觉模型名"));
         oaiVis->setValue(g_config.openaiModel.empty() ? L("Boş", "Empty", "空") : g_config.openaiModel);
         list->addItem(oaiVis);
 
-        auto* oaiTrans = new tsl::elm::ListItem(L("Translate Model", "Translate Model", "翻译模型"));
+        list->addItem(new tsl::elm::CategoryHeader(L("ÇEVİRİ", "TRANSLATE", "翻译模型")));
+
+        auto* oaiTransKey = new tsl::elm::ListItem(L("Translate API Key", "Translate API Key", "翻译 API Key"));
+        bool transOk = !g_config.openaiTransApiKey.empty() && !g_config.openaiTransBaseUrl.empty();
+        oaiTransKey->setValue(transOk ? L("Aktif", "Set", "已设置") : L("Pasif", "None", "未设置"));
+        oaiTransKey->setValueColor(transOk ? tsl::Color(0, 15, 0, 15) : tsl::Color(15, 0, 0, 15));
+        list->addItem(oaiTransKey);
+
+        auto* oaiTransUrl = new tsl::elm::ListItem(L("Translate Base URL", "Translate Base URL", "翻译接口地址"));
+        oaiTransUrl->setValue(g_config.openaiTransBaseUrl.empty() ? L("Boş", "Empty", "空") : g_config.openaiTransBaseUrl);
+        list->addItem(oaiTransUrl);
+
+        auto* oaiTrans = new tsl::elm::ListItem(L("Translate Model", "Translate Model", "翻译模型名"));
         oaiTrans->setValue(g_config.openaiTransModel.empty() ? L("Boş", "Empty", "空") : g_config.openaiTransModel);
         list->addItem(oaiTrans);
-
-        auto* oaiUrl = new tsl::elm::ListItem(L("Base URL", "Base URL", "接口地址"));
-        oaiUrl->setValue(g_config.openaiBaseUrl.empty() ? L("Boş", "Empty", "空") : g_config.openaiBaseUrl);
-        list->addItem(oaiUrl);
 
         frame->setContent(list);
         return frame;
@@ -767,77 +807,74 @@ public:
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SAYFA 2: Ana Çeviri Ekranı
+// SAYFA 2: Ana Çeviri Ekranı (Şeffaf üst bar)
 // ═══════════════════════════════════════════════════════════════════════════
-class TranslationResultGui : public tsl::Gui {
+class TopBarElement : public tsl::elm::Element {
+    std::vector<std::string> m_lines;
 public:
+    TopBarElement(const std::vector<std::string>& lines) : m_lines(lines) {}
+
+    void layout(u16 parentX, u16 parentY, u16 parentWidth, u16 parentHeight) override {
+        this->setBoundaries(parentX, parentY, parentWidth, parentHeight);
+    }
+
+    void draw(tsl::gfx::Renderer* renderer) override {
+        constexpr u16 barHeight = 80;
+        constexpr u16 fontSize  = 26;
+        renderer->drawRect(0, 0, 1280, barHeight, tsl::Color(0, 0, 0, 180));
+
+        u16 y = 12;
+        for (const auto& line : m_lines) {
+            if (y + fontSize > barHeight - 8) break;
+            renderer->drawString(line, false, 20, y + fontSize, fontSize, tsl::Color(255, 255, 255, 255));
+            y += fontSize + 6;
+        }
+    }
+
+    bool handleInput(u64, u64, const HidTouchState&, HidAnalogStickState, HidAnalogStickState) override {
+        return false;
+    }
+};
+
+class TranslationResultGui : public tsl::Gui {
+    size_t m_oldBackgroundAlpha = 0;
+public:
+    TranslationResultGui() {
+        m_oldBackgroundAlpha = tsl::defaultBackgroundAlpha;
+        tsl::defaultBackgroundAlpha = 0;
+    }
+
+    ~TranslationResultGui() {
+        tsl::defaultBackgroundAlpha = m_oldBackgroundAlpha;
+    }
+
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("TranslateNX", "TranslateNX", "TranslateNX"), L("[B] Geri Dön", "[B] Go Back", "[B] 返回"));
-        auto* list = new tsl::elm::List();
-
         std::lock_guard<std::mutex> lk(g_resultMutex);
-        if (g_ocrWords.empty() || g_translatedLines.empty()) {
-            if (!g_errorText.empty()) {
-                auto* errView = new ScrollText(20);
-                errView->addText("HATA:\n" + g_errorText, tsl::Color(255, 100, 100, 255), 45);
-                frame->setContent(errView);
-                return frame;
-            } else {
-                list->addItem(new tsl::elm::ListItem(L("Çevirilecek yazı bulunamadı.", "No text found to translate.", "未找到可翻译的文字。")));
-            }
+        std::vector<std::string> lines;
+
+        if (!g_errorText.empty()) {
+            lines = splitTextGlobal(L("HATA: ", "ERROR: ", "错误：") + g_errorText, 55);
+        } else if (g_translatedLines.empty()) {
+            lines = { L("Çevirilecek yazı bulunamadı.", "No text found to translate.", "未找到可翻译的文字。") };
         } else {
-            struct SortedItem {
-                OcrWord word;
-                std::string translated;
-            };
-            std::vector<SortedItem> items;
-            size_t count = std::min(g_ocrWords.size(), g_translatedLines.size());
-            for (size_t i = 0; i < count; ++i) {
-                items.push_back({g_ocrWords[i], g_translatedLines[i]});
+            std::string combined;
+            for (const auto& l : g_translatedLines) {
+                if (!combined.empty()) combined += " ";
+                combined += l;
             }
-
-            std::sort(items.begin(), items.end(), [](const SortedItem& a, const SortedItem& b) {
-                if (std::abs(a.word.y - b.word.y) < 0.05f) {
-                    return a.word.x < b.word.x; 
-                }
-                return a.word.y < b.word.y; 
-            });
-
-            for (const auto& item : items) {
-                if (item.translated.empty() || item.translated == " ") continue;
-                
-                auto truncateUtf8 = [](const std::string& str, size_t maxChars) -> std::string {
-                    size_t charCount = 0;
-                    size_t byteIndex = 0;
-                    for (; byteIndex < str.length(); ++byteIndex) {
-                        if ((str[byteIndex] & 0xC0) != 0x80) {
-                            if (charCount >= maxChars) break;
-                            charCount++;
-                        }
-                    }
-                    if (byteIndex < str.length()) {
-                        return str.substr(0, byteIndex) + "...";
-                    }
-                    return str;
-                };
-
-                auto linesTR = splitTextGlobal(item.translated, 30);
-                auto linesJP = splitTextGlobal(item.word.text, 30);
-                
-                u16 itemHeight = (linesTR.size() * 25) + (linesJP.size() * 20) + 20;
-                
-                auto* listItem = new TranslationItem(item.translated, item.word.text, linesTR, linesJP, itemHeight);
-                list->addItem(listItem);
+            lines = splitTextGlobal(combined, 55);
+            if (lines.size() > 2) {
+                lines.resize(2);
+                lines.back() += "...";
             }
         }
-        
-        frame->setContent(list);
-        return frame;
+
+        return new TopBarElement(lines);
     }
 
     bool handleInput(u64 keysDown, u64, const HidTouchState&, HidAnalogStickState, HidAnalogStickState) override {
         if (keysDown & HidNpadButton_B) {
-            tsl::goBack(); // Normal menuye don
+            tsl::goBack();
             return true;
         }
         return false;
@@ -894,6 +931,12 @@ public:
         if (m_frames == 40) {
             // Ekran tam temizken çekim yap
             auto shot = ScreenshotCapture::capture(65);
+            // 局部识别开启时，只裁剪指定区域再发给 OCR（提速 + 聚焦对话框）
+            if (g_config.ocrRegion.enabled) {
+                shot.regionCrop(g_config.ocrRegion.x, g_config.ocrRegion.y,
+                                g_config.ocrRegion.w, g_config.ocrRegion.h);
+            }
+            g_lastShot = shot;
             g_screenshotData = std::move(shot.jpegData);
             
             tsl::goBack(); // ScreenshotWaitGui'yi kapat
@@ -969,6 +1012,95 @@ public:
         }
         if (keysDown & HidNpadButton_Y) {
             tsl::changeTo<SettingsGui>();
+            return true;
+        }
+        return false;
+    }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAYFA: OCR 识别区域编辑器（局部识别）
+// ═══════════════════════════════════════════════════════════════════════════
+class RegionEditorGui : public tsl::Gui {
+    OcrRegion m_region;   // 编辑中的副本
+    bool      m_enabled;  // 局部识别开关
+    int       m_frames = 0;
+
+    void clampRegion() {
+        auto c = [](float& v, float lo, float hi){ if (v < lo) v = lo; if (v > hi) v = hi; };
+        c(m_region.x, 0.0f, 1.0f);
+        c(m_region.y, 0.0f, 1.0f);
+        c(m_region.w, 0.02f, 1.0f);
+        c(m_region.h, 0.02f, 1.0f);
+        if (m_region.x + m_region.w > 1.0f) m_region.x = 1.0f - m_region.w;
+        if (m_region.y + m_region.h > 1.0f) m_region.y = 1.0f - m_region.h;
+    }
+
+    void drawOverlay(tsl::gfx::Renderer* r) {
+        r->clearScreen();
+        s32 x = (s32)(m_region.x * 1280.0f);
+        s32 y = (s32)(m_region.y * 720.0f);
+        s32 w = (s32)(m_region.w * 1280.0f);
+        s32 h = (s32)(m_region.h * 720.0f);
+        r->drawRect(0, 0, 1280, y, tsl::Color(0, 0, 0, 140));
+        r->drawRect(0, y + h, 1280, 720 - (y + h), tsl::Color(0, 0, 0, 140));
+        r->drawRect(0, y, x, h, tsl::Color(0, 0, 0, 140));
+        r->drawRect(x + w, y, 1280 - (x + w), h, tsl::Color(0, 0, 0, 140));
+        r->drawRect(x, y, w, h, tsl::Color(255, 60, 60, 255));
+        r->drawRect(x + 2, y + 2, w - 4, h - 4, tsl::Color(255, 60, 60, 120));
+
+        r->drawString(L("方向键: 移动区域", "D-pad: move region", "方向键: 移动区域").c_str(), false,
+                      40, 60, 22, tsl::Color(255,255,255,255));
+        r->drawString(L("ZL/ZR: 宽  X/Y: 高  (-): 开关", "ZL/ZR: width  X/Y: height  (-): toggle", "ZL/ZR: 宽  X/Y: 高  (-): 开关").c_str(), false,
+                      40, 90, 22, tsl::Color(255,255,255,255));
+        r->drawString(L("A: 保存并退出   B: 取消", "A: save & exit   B: cancel", "A: 保存并退出   B: 取消").c_str(), false,
+                      40, 120, 22, tsl::Color(255,255,255,255));
+        std::string status = m_enabled
+            ? L("局部识别: 开", "Region OCR: ON", "局部识别: 开")
+            : L("局部识别: 关 (全屏)", "Region OCR: OFF (full)", "局部识别: 关 (全屏)");
+        char info[256];
+        snprintf(info, sizeof(info), "%s\nX:%.2f Y:%.2f  W:%.2f H:%.2f",
+                 status.c_str(), m_region.x, m_region.y, m_region.w, m_region.h);
+        r->drawString(info, false, 40, 170, 22, tsl::Color(0,255,120,255));
+    }
+
+public:
+    tsl::elm::Element* createUI() override {
+        m_region  = g_config.ocrRegion;
+        m_enabled = g_config.ocrRegion.enabled;
+        auto* drawer = new tsl::elm::CustomDrawer([this](tsl::gfx::Renderer* r, s32, s32, s32, s32){
+            this->drawOverlay(r);
+        });
+        drawer->setBoundaries(0, 0, 1280, 720);
+        return drawer;
+    }
+
+    bool handleInput(u64 keysDown, u64 keysHeld, const HidTouchState&, HidAnalogStickState, HidAnalogStickState) override {
+        const float STEP = 0.02f;
+        bool moved = false;
+        if (keysHeld & HidNpadButton_Up)    { m_region.y -= STEP * 0.5f; moved = true; }
+        if (keysHeld & HidNpadButton_Down)  { m_region.y += STEP * 0.5f; moved = true; }
+        if (keysHeld & HidNpadButton_Left)  { m_region.x -= STEP * 0.5f; moved = true; }
+        if (keysHeld & HidNpadButton_Right) { m_region.x += STEP * 0.5f; moved = true; }
+        if (moved) { clampRegion(); return true; }
+
+        if (keysDown & HidNpadButton_ZL) { m_region.w -= STEP; clampRegion(); return true; }
+        if (keysDown & HidNpadButton_ZR) { m_region.w += STEP; clampRegion(); return true; }
+        if (keysDown & HidNpadButton_X)  { m_region.h -= STEP; clampRegion(); return true; }
+        if (keysDown & HidNpadButton_Y)  { m_region.h += STEP; clampRegion(); return true; }
+        if (keysDown & HidNpadButton_Minus) {
+            m_enabled = !m_enabled;
+            return true;
+        }
+        if (keysDown & HidNpadButton_A) {
+            m_region.enabled = m_enabled;
+            g_config.ocrRegion = m_region;
+            ConfigManager::save(g_config);
+            tsl::goBack();
+            return true;
+        }
+        if (keysDown & HidNpadButton_B) {
+            tsl::goBack();
             return true;
         }
         return false;
