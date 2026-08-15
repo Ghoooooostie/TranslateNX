@@ -26,9 +26,11 @@ static std::vector<std::string> g_translatedLines;
 static std::string       g_errorText;
 static std::string       g_originalText;
 
-// ─── Yardımcı Fonksiyon: UI Çevirisi ─────────────────────────────────────
-static std::string L(const std::string& tr, const std::string& en) {
-    return g_config.uiLang == "EN" ? en : tr;
+// ─── Yardımcı Fonksiyon: UI Çevirisi (tr / en / zh) ──────────────────────
+static std::string L(const std::string& tr, const std::string& en, const std::string& zh) {
+    if (g_config.uiLang == "EN") return en;
+    if (g_config.uiLang == "ZH") return zh;
+    return tr;
 }
 
 // ─── Forward declarations ─────────────────────────────────────────────────
@@ -51,7 +53,7 @@ static void doTranslate(std::vector<uint8_t> jpegData) {
 
     if (jpegData.empty()) {
         std::lock_guard<std::mutex> lk(g_resultMutex);
-        g_errorText    = L("OCR Hatası: Ekran görüntüsü alınamadı", "OCR Error: Screenshot could not be captured");
+        g_errorText    = L("OCR Hatası: Ekran görüntüsü alınamadı", "OCR Error: Screenshot could not be captured", "OCR 错误：无法截取屏幕");
         g_translating  = false;
         return;
     }
@@ -60,11 +62,19 @@ static void doTranslate(std::vector<uint8_t> jpegData) {
     if (g_config.ocrApi == OcrApi::GoogleVision) {
         if (g_config.visionApiKey.empty()) {
             std::lock_guard<std::mutex> lk(g_resultMutex);
-            g_errorText   = L("OCR Hatası: Google Vision API key girilmemiş", "OCR Error: Google Vision API key is missing");
+            g_errorText   = L("OCR Hatası: Google Vision API key girilmemiş", "OCR Error: Google Vision API key is missing", "OCR 错误：未填写 Google Vision API 密钥");
             g_translating = false;
             return;
         }
         ocr = Ocr::runGoogleVision(jpegData, g_config.visionApiKey, g_config.srcLang);
+    } else if (g_config.ocrApi == OcrApi::OpenAiVision) {
+        if (g_config.openaiApiKey.empty() || g_config.openaiBaseUrl.empty() || g_config.openaiModel.empty()) {
+            std::lock_guard<std::mutex> lk(g_resultMutex);
+            g_errorText   = L("OCR Hatası: OpenAI Vision ayarları eksik", "OCR Error: OpenAI Vision settings missing", "OCR 错误：未填写 OpenAI Vision 设置");
+            g_translating = false;
+            return;
+        }
+        ocr = Ocr::runOpenAiVision(jpegData, g_config.openaiApiKey, g_config.openaiBaseUrl, g_config.openaiModel, g_config.srcLang);
     } else {
         ocr = Ocr::runOcrSpace(jpegData, g_config.ocrApiKey, g_config.srcLang);
     }
@@ -88,7 +98,7 @@ static void doTranslate(std::vector<uint8_t> jpegData) {
     if (g_config.translateApi == TranslateApi::DeepL) {
         if (g_config.deeplApiKey.empty()) {
             std::lock_guard<std::mutex> lk(g_resultMutex);
-            g_errorText   = L("Çeviri Hatası: DeepL API key girilmemiş", "Translation Error: DeepL API key is missing");
+            g_errorText   = L("Çeviri Hatası: DeepL API key girilmemiş", "Translation Error: DeepL API key is missing", "翻译错误：未填写 DeepL API 密钥");
             g_translating = false;
             return;
         }
@@ -100,11 +110,19 @@ static void doTranslate(std::vector<uint8_t> jpegData) {
     } else if (g_config.translateApi == TranslateApi::GoogleCloud) {
         if (g_config.googleTransApiKey.empty()) {
             std::lock_guard<std::mutex> lk(g_resultMutex);
-            g_errorText   = L("Çeviri Hatası: Google Cloud API key girilmemiş", "Translation Error: Google Cloud API key is missing");
+            g_errorText   = L("Çeviri Hatası: Google Cloud API key girilmemiş", "Translation Error: Google Cloud API key is missing", "翻译错误：未填写 Google Cloud API 密钥");
             g_translating = false;
             return;
         }
         tr = Translate::runGoogleCloud(linesToTranslate, g_config.googleTransApiKey, g_config.srcLang, g_config.dstLang);
+    } else if (g_config.translateApi == TranslateApi::OpenAiTranslate) {
+        if (g_config.openaiApiKey.empty() || g_config.openaiBaseUrl.empty() || g_config.openaiTransModel.empty()) {
+            std::lock_guard<std::mutex> lk(g_resultMutex);
+            g_errorText   = L("Çeviri Hatası: OpenAI Translate ayarları eksik", "Translation Error: OpenAI Translate settings missing", "翻译错误：未填写 OpenAI Translate 设置");
+            g_translating = false;
+            return;
+        }
+        tr = Translate::runOpenAiTranslate(linesToTranslate, g_config.openaiApiKey, g_config.openaiBaseUrl, g_config.openaiTransModel, g_config.srcLang, g_config.dstLang);
     } else {
         tr = Translate::runMyMemory(linesToTranslate, langPair);
     }
@@ -123,27 +141,27 @@ static void doTranslate(std::vector<uint8_t> jpegData) {
 
 // ═══════════════════════════════════════════════════════════════════════════
 std::string getLanguageName(const std::string& code) {
-    if (code == "TR") return L("Türkçe", "Turkish");
-    if (code == "EN") return L("İngilizce", "English");
-    if (code == "JA") return L("Japonca", "Japanese");
-    if (code == "KO") return L("Korece", "Korean");
-    if (code == "ZH") return L("Çince", "Chinese");
-    if (code == "DE") return L("Almanca", "German");
-    if (code == "FR") return L("Fransızca", "French");
-    if (code == "ES") return L("İspanyolca", "Spanish");
-    if (code == "IT") return L("İtalyanca", "Italian");
-    if (code == "RU") return L("Rusça", "Russian");
-    if (code == "BG") return L("Bulgarca", "Bulgarian");
-    if (code == "CS") return L("Çekçe", "Czech");
-    if (code == "DA") return L("Danca", "Danish");
-    if (code == "NL") return L("Felemenkçe", "Dutch");
-    if (code == "FI") return L("Fince", "Finnish");
-    if (code == "EL") return L("Yunanca", "Greek");
-    if (code == "HU") return L("Macarca", "Hungarian");
-    if (code == "PL") return L("Lehçe", "Polish");
-    if (code == "PT") return L("Portekizce", "Portuguese");
-    if (code == "SL") return L("Slovence", "Slovenian");
-    if (code == "SV") return L("İsveççe", "Swedish");
+    if (code == "TR") return L("Türkçe", "Turkish", "土耳其语");
+    if (code == "EN") return L("İngilizce", "English", "英语");
+    if (code == "JA") return L("Japonca", "Japanese", "日语");
+    if (code == "KO") return L("Korece", "Korean", "韩语");
+    if (code == "ZH") return L("Çince", "Chinese", "中文");
+    if (code == "DE") return L("Almanca", "German", "德语");
+    if (code == "FR") return L("Fransızca", "French", "法语");
+    if (code == "ES") return L("İspanyolca", "Spanish", "西班牙语");
+    if (code == "IT") return L("İtalyanca", "Italian", "意大利语");
+    if (code == "RU") return L("Rusça", "Russian", "俄语");
+    if (code == "BG") return L("Bulgarca", "Bulgarian", "保加利亚语");
+    if (code == "CS") return L("Çekçe", "Czech", "捷克语");
+    if (code == "DA") return L("Danca", "Danish", "丹麦语");
+    if (code == "NL") return L("Felemenkçe", "Dutch", "荷兰语");
+    if (code == "FI") return L("Fince", "Finnish", "芬兰语");
+    if (code == "EL") return L("Yunanca", "Greek", "希腊语");
+    if (code == "HU") return L("Macarca", "Hungarian", "匈牙利语");
+    if (code == "PL") return L("Lehçe", "Polish", "波兰语");
+    if (code == "PT") return L("Portekizce", "Portuguese", "葡萄牙语");
+    if (code == "SL") return L("Slovence", "Slovenian", "斯洛文尼亚语");
+    if (code == "SV") return L("İsveççe", "Swedish", "瑞典语");
     return code;
 }
 
@@ -153,12 +171,13 @@ std::string getLanguageName(const std::string& code) {
 class OcrApiSelectGui : public tsl::Gui {
 public:
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("OCR API Secimi", "OCR API Select"), L("[B] Geri", "[B] Back"));
+        auto* frame = new tsl::elm::OverlayFrame(L("OCR API Secimi", "OCR API Select", "OCR API 选择"), L("[B] Geri", "[B] Back", "[B] 返回"));
         auto* list  = new tsl::elm::List();
 
         std::vector<std::pair<OcrApi, std::string>> apis = {
             {OcrApi::OcrSpace, "OCR.space"},
-            {OcrApi::GoogleVision, "Google Vision"}
+            {OcrApi::GoogleVision, "Google Vision"},
+            {OcrApi::OpenAiVision, "OpenAI Vision"}
         };
 
         for (const auto& api : apis) {
@@ -187,13 +206,14 @@ public:
 class TranslateApiSelectGui : public tsl::Gui {
 public:
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("Çeviri API Seçimi", "Translate API Select"), L("[B] Geri", "[B] Back"));
+        auto* frame = new tsl::elm::OverlayFrame(L("Çeviri API Seçimi", "Translate API Select", "翻译 API 选择"), L("[B] Geri", "[B] Back", "[B] 返回"));
         auto* list  = new tsl::elm::List();
 
         std::vector<std::pair<TranslateApi, std::string>> apis = {
             {TranslateApi::MyMemory, "MyMemory"},
             {TranslateApi::DeepL, "DeepL"},
-            {TranslateApi::GoogleCloud, "Google Cloud"}
+            {TranslateApi::GoogleCloud, "Google Cloud"},
+            {TranslateApi::OpenAiTranslate, "OpenAI Translate"}
         };
 
         for (const auto& api : apis) {
@@ -222,10 +242,10 @@ public:
 class UiLanguageSelectGui : public tsl::Gui {
 public:
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("Arayüz Dili", "UI Language"), L("[B] Geri", "[B] Back"));
+        auto* frame = new tsl::elm::OverlayFrame(L("Arayüz Dili", "UI Language", "界面语言"), L("[B] Geri", "[B] Back", "[B] 返回"));
         auto* list  = new tsl::elm::List();
 
-        std::vector<std::string> langs = {"TR", "EN"};
+        std::vector<std::string> langs = {"TR", "EN", "ZH"};
 
         for (const auto& langCode : langs) {
             auto* item = new tsl::elm::ListItem(getLanguageName(langCode));
@@ -256,7 +276,7 @@ public:
     LanguageSelectGui(bool isSource) : m_isSource(isSource) {}
 
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("Dil Seçimi", "Select Language"), L("[B] Geri", "[B] Back"));
+        auto* frame = new tsl::elm::OverlayFrame(L("Dil Seçimi", "Select Language", "选择语言"), L("[B] Geri", "[B] Back", "[B] 返回"));
         auto* list  = new tsl::elm::List();
 
         std::vector<std::string> langs = {
@@ -302,7 +322,7 @@ class SettingsGui : public tsl::Gui {
     void update() override {
         if (m_srcItem) m_srcItem->setValue(getLanguageName(g_config.srcLang));
         if (m_dstItem) m_dstItem->setValue(getLanguageName(g_config.dstLang));
-        if (m_uiLangItem) m_uiLangItem->setValue(g_config.uiLang == "EN" ? "English" : "Türkçe");
+        if (m_uiLangItem) m_uiLangItem->setValue(getLanguageName(g_config.uiLang));
         
         if (m_ocrApiItem) {
             if (g_config.ocrApi == OcrApi::GoogleVision) m_ocrApiItem->setValue("Google Vision");
@@ -317,10 +337,10 @@ class SettingsGui : public tsl::Gui {
 
 public:
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("Ayarlar", "Settings"), L("[B] Geri", "[B] Back"));
+        auto* frame = new tsl::elm::OverlayFrame(L("Ayarlar", "Settings", "设置"), L("[B] Geri", "[B] Back", "[B] 返回"));
         auto* list  = new tsl::elm::List();
 
-        list->addItem(new tsl::elm::CategoryHeader(L("API AYARLARI", "API SETTINGS")));
+        list->addItem(new tsl::elm::CategoryHeader(L("API AYARLARI", "API SETTINGS", "API 设置")));
 
         m_ocrApiItem = new tsl::elm::ListItem("OCR API");
         m_ocrApiItem->setClickListener([](u64 keys) -> bool {
@@ -332,7 +352,7 @@ public:
         });
         list->addItem(m_ocrApiItem);
 
-        m_transApiItem = new tsl::elm::ListItem(L("Çeviri API", "Translate API"));
+        m_transApiItem = new tsl::elm::ListItem(L("Çeviri API", "Translate API", "翻译 API"));
         m_transApiItem->setClickListener([](u64 keys) -> bool {
             if (keys & HidNpadButton_A) {
                 tsl::changeTo<TranslateApiSelectGui>();
@@ -342,9 +362,9 @@ public:
         });
         list->addItem(m_transApiItem);
 
-        list->addItem(new tsl::elm::CategoryHeader(L("DİL AYARLARI", "LANGUAGE SETTINGS")));
+        list->addItem(new tsl::elm::CategoryHeader(L("DİL AYARLARI", "LANGUAGE SETTINGS", "语言设置")));
 
-        m_srcItem = new tsl::elm::ListItem(L("Kaynak Dil", "Source Lang"));
+        m_srcItem = new tsl::elm::ListItem(L("Kaynak Dil", "Source Lang", "源语言"));
         m_srcItem->setClickListener([](u64 keys) -> bool {
             if (keys & HidNpadButton_A) {
                 tsl::changeTo<LanguageSelectGui>(true);
@@ -354,7 +374,7 @@ public:
         });
         list->addItem(m_srcItem);
 
-        m_dstItem = new tsl::elm::ListItem(L("Hedef Dil", "Target Lang"));
+        m_dstItem = new tsl::elm::ListItem(L("Hedef Dil", "Target Lang", "目标语言"));
         m_dstItem->setClickListener([](u64 keys) -> bool {
             if (keys & HidNpadButton_A) {
                 tsl::changeTo<LanguageSelectGui>(false);
@@ -364,7 +384,7 @@ public:
         });
         list->addItem(m_dstItem);
 
-        m_uiLangItem = new tsl::elm::ListItem(L("Arayüz Dili", "UI Language"));
+        m_uiLangItem = new tsl::elm::ListItem(L("Arayüz Dili", "UI Language", "界面语言"));
         m_uiLangItem->setClickListener([](u64 keys) -> bool {
             if (keys & HidNpadButton_A) {
                 tsl::changeTo<UiLanguageSelectGui>();
@@ -374,29 +394,49 @@ public:
         });
         list->addItem(m_uiLangItem);
 
-        list->addItem(new tsl::elm::CategoryHeader(L("OCR API ANAHTARLARI", "OCR API KEYS")));
+        list->addItem(new tsl::elm::CategoryHeader(L("OCR API ANAHTARLARI", "OCR API KEYS", "OCR API 密钥")));
 
         auto* editOcrItem = new tsl::elm::ListItem("OCR.space API Key");
-        editOcrItem->setValue(g_config.ocrApiKey.empty() ? L("Pasif", "None") : L("Aktif", "Set"));
+        editOcrItem->setValue(g_config.ocrApiKey.empty() ? L("Pasif", "None", "未设置") : L("Aktif", "Set", "已设置"));
         editOcrItem->setValueColor(g_config.ocrApiKey.empty() ? tsl::Color(15, 0, 0, 15) : tsl::Color(0, 15, 0, 15));
         list->addItem(editOcrItem);
 
         auto* editVisItem = new tsl::elm::ListItem("Google Vision API Key");
-        editVisItem->setValue(g_config.visionApiKey.empty() ? L("Pasif", "None") : L("Aktif", "Set"));
+        editVisItem->setValue(g_config.visionApiKey.empty() ? L("Pasif", "None", "未设置") : L("Aktif", "Set", "已设置"));
         editVisItem->setValueColor(g_config.visionApiKey.empty() ? tsl::Color(15, 0, 0, 15) : tsl::Color(0, 15, 0, 15));
         list->addItem(editVisItem);
 
-        list->addItem(new tsl::elm::CategoryHeader(L("ÇEVİRİ API ANAHTARLARI", "TRANSLATE API KEYS")));
+        list->addItem(new tsl::elm::CategoryHeader(L("ÇEVİRİ API ANAHTARLARI", "TRANSLATE API KEYS", "翻译 API 密钥")));
 
         auto* editDeeplItem = new tsl::elm::ListItem("DeepL API Key");
-        editDeeplItem->setValue(g_config.deeplApiKey.empty() ? L("Pasif", "None") : L("Aktif", "Set"));
+        editDeeplItem->setValue(g_config.deeplApiKey.empty() ? L("Pasif", "None", "未设置") : L("Aktif", "Set", "已设置"));
         editDeeplItem->setValueColor(g_config.deeplApiKey.empty() ? tsl::Color(15, 0, 0, 15) : tsl::Color(0, 15, 0, 15));
         list->addItem(editDeeplItem);
 
         auto* editGoogleTransItem = new tsl::elm::ListItem("Google Cloud API Key");
-        editGoogleTransItem->setValue(g_config.googleTransApiKey.empty() ? L("Pasif", "None") : L("Aktif", "Set"));
+        editGoogleTransItem->setValue(g_config.googleTransApiKey.empty() ? L("Pasif", "None", "未设置") : L("Aktif", "Set", "已设置"));
         editGoogleTransItem->setValueColor(g_config.googleTransApiKey.empty() ? tsl::Color(15, 0, 0, 15) : tsl::Color(0, 15, 0, 15));
         list->addItem(editGoogleTransItem);
+
+        list->addItem(new tsl::elm::CategoryHeader(L("OPENAI (ÖZEL MODEL)", "OPENAI (CUSTOM MODEL)", "OPENAI（自定义模型）")));
+
+        auto* openaiSet = new tsl::elm::ListItem(L("OpenAI Ayarları", "OpenAI Settings", "OpenAI 设置"));
+        bool oaiOk = !g_config.openaiApiKey.empty() && !g_config.openaiBaseUrl.empty();
+        openaiSet->setValue(oaiOk ? L("Aktif", "Set", "已设置") : L("Pasif", "None", "未设置"));
+        openaiSet->setValueColor(oaiOk ? tsl::Color(0, 15, 0, 15) : tsl::Color(15, 0, 0, 15));
+        list->addItem(openaiSet);
+
+        auto* oaiVis = new tsl::elm::ListItem(L("Vision Model (OCR)", "Vision Model (OCR)", "视觉模型（OCR）"));
+        oaiVis->setValue(g_config.openaiModel.empty() ? L("Boş", "Empty", "空") : g_config.openaiModel);
+        list->addItem(oaiVis);
+
+        auto* oaiTrans = new tsl::elm::ListItem(L("Translate Model", "Translate Model", "翻译模型"));
+        oaiTrans->setValue(g_config.openaiTransModel.empty() ? L("Boş", "Empty", "空") : g_config.openaiTransModel);
+        list->addItem(oaiTrans);
+
+        auto* oaiUrl = new tsl::elm::ListItem(L("Base URL", "Base URL", "接口地址"));
+        oaiUrl->setValue(g_config.openaiBaseUrl.empty() ? L("Boş", "Empty", "空") : g_config.openaiBaseUrl);
+        list->addItem(oaiUrl);
 
         frame->setContent(list);
         return frame;
@@ -563,7 +603,7 @@ public:
 class HelpGui : public tsl::Gui {
 public:
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("Yardım & Rehber", "Help & Guide"), L("[B] Geri", "[B] Back"));
+        auto* frame = new tsl::elm::OverlayFrame(L("Yardım & Rehber", "Help & Guide", "帮助 & 指南"), L("[B] Geri", "[B] Back", "[B] 返回"));
         
         auto* scroll = new ScrollText(20);
 
@@ -658,16 +698,16 @@ public:
         : m_trText(tr), m_jpText(jp) {}
 
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("Detaylı Çeviri", "Translation Detail"), L("[B] Geri", "[B] Back"));
+        auto* frame = new tsl::elm::OverlayFrame(L("Detaylı Çeviri", "Translation Detail", "详细翻译"), L("[B] Geri", "[B] Back", "[B] 返回"));
         
         auto* scroll = new ScrollText(22);
 
-        scroll->addText(L("Çeviri", "Translation"), tsl::Color(0, 255, 0, 255), 40);
+        scroll->addText(L("Çeviri", "Translation", "翻译"), tsl::Color(0, 255, 0, 255), 40);
         scroll->addText(m_trText, tsl::Color(255, 255, 255, 255), 30); 
         
         scroll->addEmptyLine();
         
-        scroll->addText(L("Orijinal Metin", "Original Text"), tsl::Color(255, 0, 0, 255), 40);
+        scroll->addText(L("Orijinal Metin", "Original Text", "原文"), tsl::Color(255, 0, 0, 255), 40);
         scroll->addText(m_jpText, tsl::Color(150, 150, 150, 255), 30);
 
         frame->setContent(scroll);
@@ -732,7 +772,7 @@ public:
 class TranslationResultGui : public tsl::Gui {
 public:
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("TranslateNX", "TranslateNX"), L("[B] Geri Dön", "[B] Go Back"));
+        auto* frame = new tsl::elm::OverlayFrame(L("TranslateNX", "TranslateNX", "TranslateNX"), L("[B] Geri Dön", "[B] Go Back", "[B] 返回"));
         auto* list = new tsl::elm::List();
 
         std::lock_guard<std::mutex> lk(g_resultMutex);
@@ -743,7 +783,7 @@ public:
                 frame->setContent(errView);
                 return frame;
             } else {
-                list->addItem(new tsl::elm::ListItem(L("Çevirilecek yazı bulunamadı.", "No text found to translate.")));
+                list->addItem(new tsl::elm::ListItem(L("Çevirilecek yazı bulunamadı.", "No text found to translate.", "未找到可翻译的文字。")));
             }
         } else {
             struct SortedItem {
@@ -811,9 +851,9 @@ class LoadingGui : public tsl::Gui {
     int m_frames = 0;
 public:
     tsl::elm::Element* createUI() override {
-        auto* frame = new tsl::elm::OverlayFrame(L("TranslateNX", "TranslateNX"), L("Lütfen Bekleyin...", "Please Wait..."));
+        auto* frame = new tsl::elm::OverlayFrame(L("TranslateNX", "TranslateNX", "TranslateNX"), L("Lütfen Bekleyin...", "Please Wait...", "请稍候..."));
         auto* list = new tsl::elm::List();
-        list->addItem(new tsl::elm::ListItem(L("Çeviri yapılıyor...", "Translating...")));
+        list->addItem(new tsl::elm::ListItem(L("Çeviri yapılıyor...", "Translating...", "正在翻译...")));
         frame->setContent(list);
         return frame;
     }
@@ -875,13 +915,13 @@ public:
 
         auto* list = new tsl::elm::List();
 
-        auto* translateBtn = new tsl::elm::ListItem(L("Çeviriye Başla", "Start Translating"));
+        auto* translateBtn = new tsl::elm::ListItem(L("Çeviriye Başla", "Start Translating", "开始翻译"));
         translateBtn->setClickListener([](u64 keys) -> bool {
             return false; // handleInput'da islenecek
         });
         list->addItem(translateBtn);
 
-        auto* helpItem = new tsl::elm::ListItem(L("Yardım & Rehber", "Help & Guide"));
+        auto* helpItem = new tsl::elm::ListItem(L("Yardım & Rehber", "Help & Guide", "帮助 & 指南"));
         helpItem->setClickListener([](u64 keys) -> bool {
             if (keys & HidNpadButton_A) {
                 tsl::changeTo<HelpGui>();
@@ -891,7 +931,7 @@ public:
         });
         list->addItem(helpItem);
         
-        auto* settingsBtn = new tsl::elm::ListItem(L("Ayarlar", "Settings"));
+        auto* settingsBtn = new tsl::elm::ListItem(L("Ayarlar", "Settings", "设置"));
         settingsBtn->setClickListener([](u64 keys) -> bool {
             if (keys & HidNpadButton_A) {
                 tsl::changeTo<SettingsGui>();

@@ -50,3 +50,8 @@ overlay/build/tsl_utils.o
 overlay/translatenx.elf
 overlay/translatenx.ovl
 overlay/translatenx.nacp
+
+# 临时日志 / 测试产物
+deploy_log.txt
+build_log.txt
+ftp_test.txt
